@@ -1,18 +1,29 @@
+// backend/server.js (ESM)
 import Fastify from 'fastify';
+import pkg from 'pg';
+const { Pool } = pkg;
 
-const PORT = process.env.PORT || 3000;
 const fastify = Fastify({ logger: true });
 
-// Healthcheck
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
 fastify.get('/health', async () => ({ status: 'ok' }));
 
-// Optional: Root
-fastify.get('/', async () => ({ app: 'casino38-backend', version: '0.1.0' }));
+fastify.get('/dbcheck', async () => {
+  const { rows } = await pool.query('SELECT 1 as ok');
+  return { db: rows[0].ok === 1 ? 'ok' : 'fail' };
+});
+
+fastify.addHook('onClose', async () => {
+  await pool.end();
+});
 
 const start = async () => {
   try {
-    await fastify.listen({ port: PORT, host: '0.0.0.0' });
-    fastify.log.info(`Server running on http://localhost:${PORT}`);
+    await fastify.listen({ port: 3000, host: '0.0.0.0' });
+    fastify.log.info('Server running on http://0.0.0.0:3000');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
