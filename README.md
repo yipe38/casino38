@@ -1,9 +1,24 @@
-# Casino38 🎰
+# Casino38 – Development Setup
 
-Ein Lernprojekt, um eine interaktive Casino-Plattform mit eigenen Spielen zu entwickeln.  
-Ziel: Frontend, Backend und Datenbank kennenlernen und in einer Docker-Umgebung zusammenführen.  
+Dieses Projekt besteht aus einem Backend (Node.js + Fastify), einer PostgreSQL-Datenbank und Adminer als Datenbank-UI.  
+Alle Services laufen in Docker-Containern und können mit **einem Befehl** gestartet werden.
 
-## Setup
-- Git-Repository mit README und .gitignore
-- Docker-Compose mit Backend, Frontend und Datenbank (Postgres)
-- Erste Healthcheck-Routen und Frontend-Anbindung
+---
+
+## Voraussetzungen
+
+- [Docker](https://www.docker.com/get-started) installiert  
+- [Docker Compose](https://docs.docker.com/compose/) verfügbar  
+- Git zum Klonen des Repositories
+
+---
+
+## Setup & Start
+
+```bash
+# Repository klonen
+git clone <repo-url>
+cd casino38
+
+# Container bauen und starten
+docker compose up -d
