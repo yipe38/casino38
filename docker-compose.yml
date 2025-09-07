@@ -1,10 +1,8 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:15
     container_name: casino38-db
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: casino_user
       POSTGRES_PASSWORD: casino_pass
@@ -13,13 +11,39 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   adminer:
-    image: adminer
+    image: adminer:latest
     container_name: casino38-adminer
-    restart: always
+    restart: unless-stopped
     ports:
       - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+    container_name: casino38-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # environment:
+    #   DATABASE_URL: "postgres://casino_user:casino_pass@db:5432/casino38"  # aktivieren, sobald du DB im Backend nutzt
 
 volumes:
   db_data:
