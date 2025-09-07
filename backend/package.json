@@ -1,0 +1,12 @@
+{
+  "name": "casino38-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "fastify": "^4.28.1"
+  }
+}
