@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:15
@@ -8,14 +10,15 @@ services:
       POSTGRES_PASSWORD: casino_pass
       POSTGRES_DB: casino38
     ports:
-      - "5432:5432"
+      - "5432:5432" # optional: nur nötig, wenn du lokal von außen auf die DB willst
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 20s
 
   adminer:
     image: adminer:latest
@@ -26,6 +29,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      # Login in Adminer:
+      # System: PostgreSQL | Server: db | User: casino_user | Password: casino_pass | Database: casino38
 
   backend:
     build:
@@ -34,16 +41,30 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: "postgresql://casino_user:casino_pass@db:5432/casino38"
+      CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173"
+      # DB-Check beim Start optional steuerbar:
+      # DB_CHECK_ON_START: "true"
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      # nutzt Node (ist sicher im Image vorhanden) statt wget/curl
+      test:
+        - CMD-SHELL
+        - >
+          node -e "const http=require('http');
+          http.get('http://127.0.0.1:3000/health',r=>process.exit(r.statusCode===200?0:1))
+          .on('error',()=>process.exit(1))"
       interval: 10s
       timeout: 5s
-      retries: 5
-    # environment:
-    #   DATABASE_URL: "postgres://casino_user:casino_pass@db:5432/casino38"  # aktivieren, sobald du DB im Backend nutzt
+      retries: 10
+      start_period: 40s
+
   frontend:
     build:
       context: ./frontend
